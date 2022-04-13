@@ -1,65 +1,47 @@
 package HomeworkLesson3.repository;
 
 import HomeworkLesson3.model.Product;
-import org.springframework.context.annotation.Primary;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+@RequiredArgsConstructor
 @Component
-@Primary
 public class ProductRepository {
 
-    List<Product> products = new LinkedList<>();
-    private int count;
+    private final SessionFactory sessionFactory;
 
+    @Transactional
     public Product save(Product product) {
-
-        product.setId(count++);
-        products.add(product);
-
-        return Product.builder()
-                .id(product.getId())
-                .title(product.getTitle())
-                .cost(product.getCost())
-                .build();
+        sessionFactory.getCurrentSession().saveOrUpdate(product);
+        return product;
     }
 
+    @Transactional
     public Product edit(Product product) {
-        for (int i = 0; i < products.size(); i++) {
-            if (products.get(i).getId() == product.getId()) {
-                return products.set(i, product);
-            }
-        }
-        return null;
+        sessionFactory.getCurrentSession().update(product);
+        return product;
     }
 
+    @Transactional
     public Optional<Product> findById(Integer id) {
 
-        for (Product prod : products) {
-            if (prod.getId() == id) {
-                return Optional.of(prod);
-            }
-        }
-        return Optional.empty();
+        Product product = (Product) sessionFactory.getCurrentSession().getNamedQuery("Product.findById")
+                .setParameter("id", id).getSingleResult();
+        return Optional.of(product);
     }
 
-
+    @Transactional
     public List<Product> findAll() {
-        return new LinkedList<>(products);
+        return sessionFactory.getCurrentSession().getNamedQuery("Product.findAll").getResultList();
     }
 
+    @Transactional
     public void deleteById(Integer id) {
-
-        if (id < products.size()) {
-            for (Product prod : products) {
-                if (prod.getId() == id) {
-                    products.remove(prod);
-                    return;
-                }
-            }
-        }
+        sessionFactory.getCurrentSession().getNamedQuery("Product.deleteById").setParameter("id", id);
     }
 }
